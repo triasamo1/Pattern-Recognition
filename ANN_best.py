@@ -5,6 +5,7 @@ import pandas as pd
 from glob import glob
 import os
 import cv2
+from tensorflow.keras.regularizers import L2
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
@@ -79,11 +80,11 @@ print(X_train.shape)
 
 # construct model
 model = Sequential([
-    Dense(64, input_shape=(7500,)),            # <-- Make our network smaller/simpler
+    Dense(64, input_shape=(7500,),kernel_regularizer=L2(0.001)),            # <-- Make our network smaller/simpler
     BatchNormalization(),
     Activation('relu'),
     Dropout(0.3),
-    Dense(32),
+    Dense(32, kernel_regularizer=L2(0.001)),
     BatchNormalization(),
     Activation('relu'),
     Dropout(0.3),
