@@ -95,11 +95,21 @@ model.compile(
 
 history = model.fit(X_train, Y_train, batch_size=64, epochs=4)
 
-y_pred = model.predict(X_train)
+y_pred = model.predict(X_test)
 y_pred = np.argmax(y_pred, axis=-1)
-conf_mat = confusion_matrix(np.argmax(Y_train, axis=-1), y_pred)
+
+conf_mat = confusion_matrix(np.argmax(Y_test, axis=-1), y_pred)
 f,ax=plt.subplots(figsize=(5,5))
+# Normalize the confusion matrix.
+conf_mat = np.around(conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis], decimals=2)
+plt.title("Confusion matrix")
 sns.heatmap(conf_mat,annot=True,linewidths=0.01,cmap="Greens",linecolor="gray",fmt=".1f",ax=ax)
+tick_marks = np.arange(len(label_to_id_dict.keys()))
+plt.xticks(tick_marks, label_to_id_dict.keys(), rotation=45)
+plt.yticks(tick_marks, label_to_id_dict.keys(), rotation=45)
+plt.tight_layout()
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
 plt.show()
 
 print('Training Finished..')

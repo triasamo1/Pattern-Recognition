@@ -12,7 +12,8 @@ from tensorflow.keras.preprocessing import image
 from tensorflow_addons.metrics import F1Score
 from keras.utils import np_utils
 from keras.preprocessing.image import ImageDataGenerator
-# TODO: find Confusion matrix
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 
 # training and testing path
@@ -103,6 +104,23 @@ print('Test accuracy: ', score[1])
 print('Test precision: ', score[2])
 print('Test recall: ', score[3])
 print('Test F1 Score: ', score[4])
+
+y_pred = model.predict(X_test)
+y_pred = np.argmax(y_pred, axis=-1)
+
+conf_mat = confusion_matrix(np.argmax(Y_test, axis=-1), y_pred)
+f,ax=plt.subplots(figsize=(5,5))
+# Normalize the confusion matrix.
+conf_mat = np.around(conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis], decimals=2)
+plt.title("Confusion matrix")
+sns.heatmap(conf_mat,annot=True,linewidths=0.01,cmap="Greens",linecolor="gray",fmt=".1f",ax=ax)
+tick_marks = np.arange(len(label_to_id_dict.keys()))
+plt.xticks(tick_marks, label_to_id_dict.keys(), rotation=45)
+plt.yticks(tick_marks, label_to_id_dict.keys(), rotation=45)
+plt.tight_layout()
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
+plt.show()
 
 fit_hist = pd.DataFrame(history.history)
 
