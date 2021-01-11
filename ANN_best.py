@@ -71,6 +71,8 @@ X_train, X_test = fruit_images, validation_fruit_images
 Y_train, Y_test = label_ids, validation_label_ids
 
 # Normalize color values to  [-1,1]
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
 X_train = np.subtract(X_train/127.5, 1)
 X_test = np.subtract(X_test/127.5, 1)
 

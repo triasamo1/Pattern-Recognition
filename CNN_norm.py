@@ -86,11 +86,11 @@ print("Test Set Shape: ", X_test.shape)
 # ---------  Construct Model ---------
 model = Sequential([
     Conv2D(64, (3,3), input_shape=(100, 100, 3)),
-    BatchNormalization(axis=-1),
+    BatchNormalization(),
     Activation('relu'),
     MaxPooling2D(pool_size=(2,2)),
     Conv2D(32,(3,3)),
-    BatchNormalization(axis=-1),
+    BatchNormalization(),
     Activation('relu'),
     MaxPooling2D(pool_size=(2,2)),
     Flatten(),

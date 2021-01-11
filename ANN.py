@@ -72,6 +72,8 @@ X_train, X_test = fruit_images, validation_fruit_images
 Y_train, Y_test = label_ids, validation_label_ids
 
 # Normalize color values to between 0 and 1
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
 X_train = X_train/255
 X_test = X_test/255
 
