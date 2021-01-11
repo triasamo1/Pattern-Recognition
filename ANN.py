@@ -16,6 +16,8 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
 
+# ---------  Preprocess Dataset ---------
+
 # training and testing path
 train_path = "fruits-360/Training"
 valid_path = "fruits-360/Test"
@@ -33,6 +35,7 @@ for fruit_dir_path in glob(train_path + "/*"):
         fruit_images.append(image)
         labels.append(fruit_label)
 fruit_images = np.array(fruit_images)
+labels_count = labels
 labels = np.array(labels)
 
 label_to_id_dict = {v:i for i,v in enumerate(np.unique(labels))}
@@ -40,6 +43,13 @@ id_to_label_dict = {v: k for k, v in label_to_id_dict.items()}
 label_ids = np.array([label_to_id_dict[x] for x in labels])
 
 print(fruit_images.shape, label_ids.shape, labels.shape)
+
+# ========================================
+print("Class Occurences in Dataset")
+for lab in np.unique(labels):
+    print("{0} : {1} ".format(lab,labels_count.count(lab)))
+
+# ========================================
 
 validation_fruit_images = []
 validation_labels = []
@@ -73,7 +83,7 @@ X_test = X_test.reshape(X_test.shape[0], 100*100*3)
 Y_train = np_utils.to_categorical(Y_train, 8)
 Y_test = np_utils.to_categorical(Y_test, 8)
 
-# construct model
+# ---------  Construct Model ---------
 model = Sequential([
     Dense(256, input_shape=(30000,)),
     Activation('sigmoid'),
@@ -91,10 +101,12 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=32, epochs=3)
+history = model.fit(X_train, Y_train, batch_size=32, epochs=3, shuffle=True)
 
 print('Training Finished..')
 print('Testing ..')
+
+# --------- Test set  ---------
 
 score = model.evaluate(X_test, Y_test)
 
@@ -107,6 +119,8 @@ print('Test F1 Score: ', score[4])
 
 y_pred = model.predict(X_test)
 y_pred = np.argmax(y_pred, axis=-1)
+
+# ---------  Confusion Matrix ---------
 
 conf_mat = confusion_matrix(np.argmax(Y_test, axis=-1), y_pred)
 f,ax=plt.subplots(figsize=(5,5))
@@ -121,6 +135,8 @@ plt.tight_layout()
 plt.ylabel('True label')
 plt.xlabel('Predicted label')
 plt.show()
+
+# ---------  Accuracy - Loss Plot ---------
 
 fit_hist = pd.DataFrame(history.history)
 

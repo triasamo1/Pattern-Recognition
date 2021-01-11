@@ -1,20 +1,19 @@
-# import libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from glob import glob
 import os
 import cv2
-from tensorflow.keras.regularizers import L2
-from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
+from tensorflow.keras.layers import Dense, Dropout, Activation
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, ZeroPadding2D, GlobalAveragePooling2D, Flatten
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
-from tensorflow.keras.preprocessing import image
 from tensorflow_addons.metrics import F1Score
 from keras.utils import np_utils
+from keras.preprocessing.image import ImageDataGenerator
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-from keras.preprocessing.image import ImageDataGenerator
+
 
 # ---------  Preprocess Dataset ---------
 
@@ -28,7 +27,7 @@ for fruit_dir_path in glob(train_path + "/*"):
     for image_path in glob(os.path.join(fruit_dir_path, "*.jpg")):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
-        image = cv2.resize(image, (50, 50))               # <-- We resize images at 50x50
+        image = cv2.resize(image, (100, 100))               # <-- We resize images at 50x50
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         fruit_images.append(image)
@@ -40,7 +39,7 @@ labels = np.array(labels)
 # ========================================
 print("Class Occurences in Dataset")
 for lab in np.unique(labels):
-    print("{0} : {1} ".format(lab, labels_count.count(lab)))
+    print("{0} : {1} ".format(lab,labels_count.count(lab)))
 
 # ========================================
 
@@ -57,7 +56,7 @@ for fruit_dir_path in glob(valid_path + "/*"):
     for image_path in glob(os.path.join(fruit_dir_path, "*.jpg")):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
-        image = cv2.resize(image, (50, 50))             # <-- We resize images at 50x50
+        image = cv2.resize(image, (100, 100))             # <-- We resize images at 50x50
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         validation_fruit_images.append(image)
@@ -70,36 +69,35 @@ validation_label_ids = np.array([label_to_id_dict[x] for x in validation_labels]
 X_train, X_test = fruit_images, validation_fruit_images
 Y_train, Y_test = label_ids, validation_label_ids
 
-# Normalize color values to  [-1,1]
-X_train = np.subtract(X_train/127.5, 1)
-X_test = np.subtract(X_test/127.5, 1)
-
-# Flatten input
-X_train = X_train.reshape(X_train.shape[0], 50*50*3)
-X_test = X_test.reshape(X_test.shape[0], 50*50*3)
+# Normalize color values to between 0 and 1
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train = X_train / 255
+X_test = X_test / 255
 
 # OneHot Encode the Output
 Y_train = np_utils.to_categorical(Y_train, 8)
 Y_test = np_utils.to_categorical(Y_test, 8)
-print(X_train.shape)
+
+print("Train Set Shape: ", X_train.shape)
+print("Test Set Shape: ", X_test.shape)
 
 # ---------  Construct Model ---------
 model = Sequential([
-    Dense(64, input_shape=(7500,),kernel_regularizer=L2(0.001)),            # <-- Make our network smaller/simpler
-    BatchNormalization(),
+    Conv2D(64, (3,3), input_shape=(100, 100, 3), padding='same'),
     Activation('relu'),
-    Dropout(0.3),
-    Dense(32, kernel_regularizer=L2(0.001)),
-    BatchNormalization(),
+    MaxPooling2D(pool_size=(2,2)),
+    Conv2D(32,(3,3), padding='same'),
     Activation('relu'),
-    Dropout(0.3),
+    MaxPooling2D(pool_size=(2,2)),
+    Flatten(),
+    Dense(128),
+    Activation('relu'),
     Dense(8),
     Activation('softmax')
 ])
 
 model.summary()
-
-opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 
 model.compile(
     loss='categorical_crossentropy',
@@ -107,7 +105,7 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=64, epochs=4, shuffle=True)
+history = model.fit(X_train, Y_train, batch_size=128, epochs=2, shuffle=True)
 
 print('Training Finished..')
 print('Testing ..')
