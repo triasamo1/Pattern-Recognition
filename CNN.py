@@ -10,7 +10,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
 from tensorflow_addons.metrics import F1Score
 from keras.utils import np_utils
-from keras.preprocessing.image import ImageDataGenerator
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
@@ -105,7 +104,7 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=128, epochs=2, shuffle=True)
+history = model.fit(X_train, Y_train, batch_size=128, epochs=2, steps_per_epoch=20,shuffle=True)
 
 print('Training Finished..')
 print('Testing ..')

@@ -8,17 +8,10 @@ import cv2
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
-from tensorflow.keras.preprocessing import image
 from tensorflow_addons.metrics import F1Score
 from keras.utils import np_utils
-from keras.preprocessing.image import ImageDataGenerator
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-
-# TODO: determine order of BatchNorm
-# TODO: add callbacks to stop training at certain achievement
-# TODO: L2 Regularization to stop overfitting
-
 
 # training and testing path
 train_path = "fruits-360/Training"

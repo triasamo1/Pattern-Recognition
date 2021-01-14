@@ -5,13 +5,13 @@ from glob import glob
 import os
 import cv2
 from tensorflow.keras.layers import Dense, Dropout, Activation
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, ZeroPadding2D, Flatten
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.metrics import Precision,Recall
 from tensorflow_addons.metrics import F1Score
+from tensorflow.keras.optimizers import Adam
 from keras.utils import np_utils
-from keras.preprocessing.image import ImageDataGenerator
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
@@ -85,11 +85,11 @@ print("Test Set Shape: ", X_test.shape)
 
 # ---------  Construct Model ---------
 model = Sequential([
-    Conv2D(64, (3,3), input_shape=(100, 100, 3)),
+    Conv2D(64, (3,3), input_shape=(100, 100, 3), padding='same'),
     BatchNormalization(),
     Activation('relu'),
     MaxPooling2D(pool_size=(2,2)),
-    Conv2D(32,(3,3)),
+    Conv2D(32,(3,3), padding='same'),
     BatchNormalization(),
     Activation('relu'),
     MaxPooling2D(pool_size=(2,2)),
@@ -102,13 +102,14 @@ model = Sequential([
 
 model.summary()
 
+opt = Adam(learning_rate=1e-3)
 model.compile(
     loss='categorical_crossentropy',
-    optimizer='adam',
+    optimizer=opt,
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=64, epochs=1, shuffle=True)
+history = model.fit(X_train, Y_train, batch_size=128, epochs=2, shuffle=True, steps_per_epoch=20)
 
 print('Training Finished..')
 print('Testing ..')

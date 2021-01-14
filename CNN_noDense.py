@@ -1,11 +1,11 @@
-# import libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from glob import glob
 import os
 import cv2
-from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
+from tensorflow.keras.layers import Dense, Dropout, Activation
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, GlobalMaxPooling2D, GlobalAveragePooling2D
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
 from tensorflow_addons.metrics import F1Score
@@ -14,7 +14,8 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
 
-# training and testing path
+# ---------  Preprocess Dataset ---------
+
 train_path = "fruits-360/Training"
 valid_path = "fruits-360/Test"
 
@@ -25,13 +26,21 @@ for fruit_dir_path in glob(train_path + "/*"):
     for image_path in glob(os.path.join(fruit_dir_path, "*.jpg")):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
-        image = cv2.resize(image, (100, 100))
+        image = cv2.resize(image, (100, 100))               # <-- We resize images at 50x50
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         fruit_images.append(image)
         labels.append(fruit_label)
 fruit_images = np.array(fruit_images)
+labels_count = labels
 labels = np.array(labels)
+
+# ========================================
+print("Class Occurences in Dataset")
+for lab in np.unique(labels):
+    print("{0} : {1} ".format(lab,labels_count.count(lab)))
+
+# ========================================
 
 label_to_id_dict = {v:i for i,v in enumerate(np.unique(labels))}
 id_to_label_dict = {v: k for k, v in label_to_id_dict.items()}
@@ -46,7 +55,7 @@ for fruit_dir_path in glob(valid_path + "/*"):
     for image_path in glob(os.path.join(fruit_dir_path, "*.jpg")):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
-        image = cv2.resize(image, (100, 100))
+        image = cv2.resize(image, (100, 100))             # <-- We resize images at 50x50
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         validation_fruit_images.append(image)
@@ -60,26 +69,28 @@ X_train, X_test = fruit_images, validation_fruit_images
 Y_train, Y_test = label_ids, validation_label_ids
 
 # Normalize color values to between 0 and 1
-X_train = X_train/255
-X_test = X_test/255
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train = X_train / 255
+X_test = X_test / 255
 
-# Make a flattened version for some of our models
-X_train = X_train.reshape(X_train.shape[0], 100*100*3)
-X_test = X_test.reshape(X_test.shape[0], 100*100*3)
-
-# One Hot Encode the Output
+# OneHot Encode the Output
 Y_train = np_utils.to_categorical(Y_train, 8)
 Y_test = np_utils.to_categorical(Y_test, 8)
 
-# construct model
+print("Train Set Shape: ", X_train.shape)
+print("Test Set Shape: ", X_test.shape)
+
+# ---------  Construct Model ---------
 model = Sequential([
-    Dense(256, input_shape=(30000,)),
-    Activation('sigmoid'),
-    Dropout(0.2),
-    Dense(128),
-    Activation('sigmoid'),
-    Dropout(0.2),
-    Dense(8),
+    Conv2D(32, (3,3), input_shape=(100, 100, 3), padding='same'),
+    Activation('relu'),
+    MaxPooling2D(pool_size=(2,2)),
+    Conv2D(16,(3,3), padding='same'),
+    Activation('relu'),
+    MaxPooling2D(pool_size=(2,2)),
+    Conv2D(8,(3,3), padding='same'),
+    GlobalAveragePooling2D(),
     Activation('softmax')
 ])
 
@@ -91,7 +102,23 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=64, epochs=4)
+history = model.fit(X_train, Y_train, batch_size=128, epochs=14, shuffle=True)
+
+print('Training Finished..')
+print('Testing ..')
+
+# --------- Test set  ---------
+
+score = model.evaluate(X_test, Y_test)
+
+print('===Testing Metrics===')
+print('Test loss: ', score[0])
+print('Test accuracy: ', score[1])
+print('Test precision: ', score[2])
+print('Test recall: ', score[3])
+print('Test F1 Score: ', score[4])
+
+# ---------  Confusion Matrix ---------
 
 y_pred = model.predict(X_test)
 y_pred = np.argmax(y_pred, axis=-1)
@@ -110,18 +137,7 @@ plt.ylabel('True label')
 plt.xlabel('Predicted label')
 plt.show()
 
-print('Training Finished..')
-print('Testing ..')
-
-score = model.evaluate(X_test, Y_test)
-
-print('===Testing Metrics===')
-print('Test loss: ', score[0])
-print('Test accuracy: ', score[1])
-print('Test precision: ', score[2])
-print('Test recall: ', score[3])
-print('Test F1 Score: ', score[4])
-
+# ---------  Accuracy - Loss Plot ---------
 fit_hist = pd.DataFrame(history.history)
 
 loss = round(np.min(fit_hist['loss']), 2)

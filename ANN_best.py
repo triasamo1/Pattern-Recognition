@@ -9,12 +9,10 @@ from tensorflow.keras.regularizers import L2
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
-from tensorflow.keras.preprocessing import image
 from tensorflow_addons.metrics import F1Score
 from keras.utils import np_utils
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-from keras.preprocessing.image import ImageDataGenerator
 
 # ---------  Preprocess Dataset ---------
 
