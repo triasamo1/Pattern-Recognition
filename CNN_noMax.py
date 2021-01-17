@@ -4,7 +4,7 @@ import pandas as pd
 from glob import glob
 import os
 import cv2
-from tensorflow.keras.layers import Dense, Dropout, Activation
+from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, GlobalMaxPooling2D, GlobalAveragePooling2D
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
@@ -83,14 +83,20 @@ print("Test Set Shape: ", X_test.shape)
 
 # ---------  Construct Model ---------
 model = Sequential([
-    Conv2D(32, (3,3), input_shape=(100, 100, 3), padding='same'),
+    Conv2D(64, (3,3), input_shape=(100, 100, 3), strides=2, padding='same'),
     Activation('relu'),
-    MaxPooling2D(pool_size=(2,2)),
-    Conv2D(16,(3,3), padding='same'),
+    Conv2D(64,(3,3), strides=2, padding='same'),
     Activation('relu'),
-    MaxPooling2D(pool_size=(2,2)),
-    Conv2D(8,(3,3), padding='same'),
-    GlobalAveragePooling2D(),
+    Conv2D(128,(3,3), strides=2, padding='same'),
+    Activation('relu'),
+    Conv2D(64,(3,3), strides=2, padding='same'),
+    Activation('relu'),
+    Conv2D(64,(4,4)),
+    Activation('relu'),
+    Conv2D(64,(4,4)),
+    Activation('relu'),
+    Conv2D(8,(1,1)),
+    Flatten(),
     Activation('softmax')
 ])
 
@@ -102,7 +108,7 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=128, epochs=5, shuffle=True)
+history = model.fit(X_train, Y_train, batch_size=128, epochs=2, shuffle=True)
 
 print('Training Finished..')
 print('Testing ..')
