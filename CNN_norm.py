@@ -86,11 +86,13 @@ print("Test Set Shape: ", X_test.shape)
 # ---------  Construct Model ---------
 model = Sequential([
     Conv2D(64, (3,3), input_shape=(100, 100, 3), padding='same'),
-    BatchNormalization(),
+    BatchNormalization(momentum=0.1),
+    #BatchNormalization(),
     Activation('relu'),
     MaxPooling2D(pool_size=(2,2)),
     Conv2D(32,(3,3), padding='same'),
-    BatchNormalization(),
+    BatchNormalization(momentum=0.1),
+    #BatchNormalization(),
     Activation('relu'),
     MaxPooling2D(pool_size=(2,2)),
     Flatten(),
@@ -109,7 +111,7 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=128, epochs=2, shuffle=True, steps_per_epoch=20)
+history = model.fit(X_train, Y_train, batch_size=64, epochs=2, shuffle=True, steps_per_epoch=20)
 
 print('Training Finished..')
 print('Testing ..')

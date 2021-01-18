@@ -68,7 +68,8 @@ validation_label_ids = np.array([label_to_id_dict[x] for x in validation_labels]
 
 X_train, X_test = fruit_images, validation_fruit_images
 Y_train, Y_test = label_ids, validation_label_ids
-
+print(X_train.shape)
+print(X_test.shape)
 # Normalize color values to between 0 and 1
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')

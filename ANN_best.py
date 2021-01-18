@@ -10,6 +10,7 @@ from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNo
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.metrics import Precision,Recall
 from tensorflow_addons.metrics import F1Score
+from tensorflow.keras.optimizers import Adam
 from keras.utils import np_utils
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
@@ -85,11 +86,11 @@ print(X_train.shape)
 
 # ---------  Construct Model ---------
 model = Sequential([
-    Dense(64, input_shape=(7500,),kernel_regularizer=L2(0.001)),            # <-- Make our network smaller/simpler
+    Dense(128, input_shape=(7500,),kernel_regularizer=L2(0.001)),            # <-- Make our network smaller/simpler
     BatchNormalization(),
     Activation('relu'),
     Dropout(0.3),
-    Dense(32, kernel_regularizer=L2(0.001)),
+    Dense(64, kernel_regularizer=L2(0.001)),
     BatchNormalization(),
     Activation('relu'),
     Dropout(0.3),
@@ -99,7 +100,7 @@ model = Sequential([
 
 model.summary()
 
-opt = tf.keras.optimizers.Adam(learning_rate=0.001)
+opt = Adam(learning_rate=0.001)
 
 model.compile(
     loss='categorical_crossentropy',
@@ -107,7 +108,7 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=64, epochs=4, shuffle=True)
+history = model.fit(X_train, Y_train, batch_size=64, epochs=2, shuffle=True)
 
 print('Training Finished..')
 print('Testing ..')

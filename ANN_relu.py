@@ -75,11 +75,9 @@ model = Sequential([
     Dense(256, input_shape=(30000,)),
     BatchNormalization(),
     Activation('relu'),
-    Dropout(0.2),
     Dense(128),
     BatchNormalization(),
     Activation('relu'),
-    Dropout(0.2),
     Dense(8),
     Activation('softmax')
 ])
@@ -92,7 +90,7 @@ model.compile(
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=32, epochs=3)
+history = model.fit(X_train, Y_train, batch_size=32, epochs=2)
 
 print('Training Finished..')
 print('Testing ..')
