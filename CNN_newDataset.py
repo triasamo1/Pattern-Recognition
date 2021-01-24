@@ -12,145 +12,207 @@ from tensorflow_addons.metrics import F1Score
 from keras.utils import np_utils
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # ---------  Preprocess Dataset ---------
 
-train_path = "fruits-360/Training"
-valid_path = "fruits-360/Test"
+# patients_list = "IDC_regular_ps50_idx5"
+#
+# image_paths_class_0 = []
+# image_paths_class_1 = []
+# diagnosis_0 = []
+# diagnosis_1 = []
+# patients_0 = []
+# patients_1 = []
+#
+# for patient in glob(patients_list + "/*"):
+#     patient_id = patient.split("\\")[-1]
+#     for class_ind in glob(patient + "/*"):
+#         class_id = class_ind.split("\\")[-1]
+#         for image_path in glob(os.path.join(class_ind, "*.png")):
+#             if class_id=='0':
+#                 image_paths_class_0.append(image_path)
+#                 diagnosis_0.append(class_id)
+#                 patients_0.append(patient_id)
+#             else:
+#                 image_paths_class_1.append(image_path)
+#                 diagnosis_1.append(class_id)
+#                 patients_1.append(patient_id)
+#
+# # labels_count = diagnosis
+# # diagnosis = np.array(diagnosis)
+#
+# # dictionary "bible" holding all the info for each image
+# bible_0 = {'patient': patients_0, 'image paths':image_paths_class_0, 'diagnosis':diagnosis_0}
+# bible_1 = {'patient': patients_1, 'image paths':image_paths_class_1, 'diagnosis':diagnosis_1}
+# # ========================================
+# print("Class Occurences in Dataset")
+# total_0=len(diagnosis_0)
+# total_1=len(diagnosis_1)
+# print("0 : {}".format(total_0))
+# print("1 : {}".format(total_1))
+# # ========================================
 
-fruit_images = []
-labels = []
-for fruit_dir_path in glob(train_path + "/*"):
-    fruit_label = fruit_dir_path.split("\\")[-1]
-    for image_path in glob(os.path.join(fruit_dir_path, "*.jpg")):
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+# # ---------- built train and test set ----------------
+# X_train=[]
+# Y_train=[]
+# for path in bible_0['image paths'][:int(total_0 * 0.8)]:
+#     image = cv2.imread(path, cv2.IMREAD_COLOR)
+#     image = cv2.resize(image, (50, 50))
+#     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+#     X_train.append(image)
+#     Y_train.append('0')
+#
+# for path in bible_1['image paths'][:int(total_1 * 0.8)]:
+#     image = cv2.imread(path, cv2.IMREAD_COLOR)
+#     image = cv2.resize(image, (50, 50))
+#     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+#     X_train.append(image)
+#     Y_train.append('1')
+#
+# X_train = np.array(X_train)
 
-        image = cv2.resize(image, (100, 100))               # <-- We resize images at 50x50
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+# X_test = []
+# Y_test = []
+# for path in bible_0['image paths'][int(total_0 * 0.8):]:
+#     image = cv2.imread(path, cv2.IMREAD_COLOR)
+#     image = cv2.resize(image, (50, 50))
+#     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+#     X_test.append(image)
+#     Y_test.append('0')
+#
+# for path in bible_1['image paths'][int(total_1 * 0.8):]:
+#     image = cv2.imread(path, cv2.IMREAD_COLOR)
+#     image = cv2.resize(image, (50, 50))
+#     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+#     X_test.append(image)
+#     Y_test.append('1')
 
-        fruit_images.append(image)
-        labels.append(fruit_label)
-fruit_images = np.array(fruit_images)
-labels_count = labels
-labels = np.array(labels)
+dest_path = "breast-cancer-dataset/"
 
-# ========================================
-print("Class Occurences in Dataset")
-for lab in np.unique(labels):
-    print("{0} : {1} ".format(lab,labels_count.count(lab)))
+train_datagen = ImageDataGenerator(
+        rescale=1./255,
+        zoom_range=0.2,
+        horizontal_flip=True,
+        vertical_flip=True,
+        rotation_range=90,
+)
 
-# ========================================
+test_datagen = ImageDataGenerator(
+    rescale=1./255
+)
 
-label_to_id_dict = {v:i for i,v in enumerate(np.unique(labels))}
-id_to_label_dict = {v: k for k, v in label_to_id_dict.items()}
-label_ids = np.array([label_to_id_dict[x] for x in labels])
+train_generator = train_datagen.flow_from_directory(
+        dest_path+'training/',
+        target_size=(50, 50),
+        batch_size=32,
+        class_mode='categorical',
+        shuffle=True,
+)
+test_generator = test_datagen.flow_from_directory(
+        dest_path+'testing/',
+        target_size=(50, 50),
+        batch_size=32,
+        class_mode='categorical')
 
-print(fruit_images.shape, label_ids.shape, labels.shape)
+# total = 0
+# #total_length = len(os.listdir(dest_path+'training/0'))
+# for inputs,outputs in train_generator:
+#     total += 1
+#     if total==158990:
+#         break
+#     #do things with each batch of inputs and ouptus
 
-validation_fruit_images = []
-validation_labels = []
-for fruit_dir_path in glob(valid_path + "/*"):
-    fruit_label = fruit_dir_path.split("\\")[-1]
-    for image_path in glob(os.path.join(fruit_dir_path, "*.jpg")):
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-
-        image = cv2.resize(image, (100, 100))             # <-- We resize images at 50x50
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-        validation_fruit_images.append(image)
-        validation_labels.append(fruit_label)
-validation_fruit_images = np.array(validation_fruit_images)
-validation_labels = np.array(validation_labels)
-
-validation_label_ids = np.array([label_to_id_dict[x] for x in validation_labels])
-
-X_train, X_test = fruit_images, validation_fruit_images
-Y_train, Y_test = label_ids, validation_label_ids
-
-# Normalize color values to between 0 and 1
-X_train = X_train.astype('float32')
-X_test = X_test.astype('float32')
-X_train = X_train / 255
-X_test = X_test / 255
-
-# OneHot Encode the Output
-Y_train = np_utils.to_categorical(Y_train, 8)
-Y_test = np_utils.to_categorical(Y_test, 8)
-
-print("Train Set Shape: ", X_train.shape)
-print("Test Set Shape: ", X_test.shape)
 
 # ---------  Construct Model ---------
 model = Sequential([
-    Conv2D(32, (3,3), input_shape=(100, 100, 3), padding='same'),
+    Conv2D(64, (3,3), input_shape=(50, 50, 3), padding='same'),
     Activation('relu'),
     Dropout(0.3),
     MaxPooling2D(pool_size=(2,2)),
-    Conv2D(16,(3,3), padding='same'),
+    Conv2D(32,(3,3), padding='same'),
     Activation('relu'),
     Dropout(0.3),
     MaxPooling2D(pool_size=(2,2)),
     Flatten(),
     Dense(128),
     Activation('relu'),
-    Dense(8),
+    Dense(2),
     Activation('softmax')
 ])
 
 model.summary()
+
 model.compile(
     loss='categorical_crossentropy',
     optimizer='adam',
-    metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=8)]
+    metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=2)]
 )
 
-history = model.fit(X_train, Y_train, batch_size=128, epochs=2, steps_per_epoch=20,shuffle=True)
+history = model.fit(
+        train_generator,
+        validation_data=test_generator,
+        validation_steps=100,
+        epochs=14,
+        steps_per_epoch= 200
+)
 
 print('Training Finished..')
 print('Testing ..')
 
 # --------- Test set  ---------
 
-score = model.evaluate(X_test, Y_test)
+#score = model.evaluate(test_generator)
 
-print('===Testing Metrics===')
-print('Test loss: ', score[0])
-print('Test accuracy: ', score[1])
-print('Test precision: ', score[2])
-print('Test recall: ', score[3])
-print('Test F1 Score: ', score[4])
+# print('===Testing Metrics===')
+# print('Test loss: ', score[0])
+# print('Test accuracy: ', score[1])
+# print('Test precision: ', score[2])
+# print('Test recall: ', score[3])
+# print('Test F1 Score: ', score[4])
 
 # ---------  Confusion Matrix ---------
 
-y_pred = model.predict(X_test)
-y_pred = np.argmax(y_pred, axis=-1)
-
-conf_mat = confusion_matrix(np.argmax(Y_test, axis=-1), y_pred)
-f,ax=plt.subplots(figsize=(5,5))
-# Normalize the confusion matrix.
-conf_mat = np.around(conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis], decimals=2)
-plt.title("Confusion matrix")
-sns.heatmap(conf_mat,annot=True,linewidths=0.01,cmap="Greens",linecolor="gray",fmt=".1f",ax=ax)
-tick_marks = np.arange(len(label_to_id_dict.keys()))
-plt.xticks(tick_marks, label_to_id_dict.keys(), rotation=45)
-plt.yticks(tick_marks, label_to_id_dict.keys(), rotation=45)
-plt.tight_layout()
-plt.ylabel('True label')
-plt.xlabel('Predicted label')
-plt.show()
-
+# y_pred = model.predict(X_test)
+# y_pred = np.argmax(y_pred, axis=-1)
+#
+# conf_mat = confusion_matrix(np.argmax(Y_test, axis=-1), y_pred)
+# f,ax=plt.subplots(figsize=(5,5))
+# # Normalize the confusion matrix.
+# conf_mat = np.around(conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis], decimals=2)
+# plt.title("Confusion matrix")
+# sns.heatmap(conf_mat,annot=True,linewidths=0.01,cmap="Greens",linecolor="gray",fmt=".1f",ax=ax)
+# tick_marks = np.arange(len(label_to_id_dict.keys()))
+# plt.xticks(tick_marks, label_to_id_dict.keys(), rotation=45)
+# plt.yticks(tick_marks, label_to_id_dict.keys(), rotation=45)
+# plt.tight_layout()
+# plt.ylabel('True label')
+# plt.xlabel('Predicted label')
+# plt.show()
+#
 # ---------  Accuracy - Loss Plot ---------
 fit_hist = pd.DataFrame(history.history)
 
 loss = round(np.min(fit_hist['loss']), 2)
-acc = round(np.max(fit_hist['accuracy']), 2)
+val_loss = round(np.min(fit_hist['val_loss']), 2)
 
-plt.title(f"Train Loss ({loss}) and Train Accuracy ({acc})")
+plt.title(f"Train Loss ({loss}) and Test Loss ({val_loss})")
 plt.plot(fit_hist['loss'], label='Train Loss')
-plt.plot(fit_hist['accuracy'], label='Train Accuracy')
+plt.plot(fit_hist['val_loss'], label='Test Loss')
 plt.xlabel('Epoch')
-plt.ylabel('Loss & Accuracy')
+plt.ylabel('Loss')
+plt.grid(color='#e6e6e6')
+plt.legend()
+plt.show()
+
+acc = round(np.max(fit_hist['accuracy']), 2)
+val_acc = round(np.max(fit_hist['val_accuracy']), 2)
+
+plt.title(f"Train Accuracy ({acc}) and Test Accuracy ({val_acc})")
+plt.plot(fit_hist['accuracy'], label='Train Accuracy')
+plt.plot(fit_hist['val_accuracy'], label='Test Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
 plt.grid(color='#e6e6e6')
 plt.legend()
 plt.show()
