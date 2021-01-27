@@ -1,16 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from glob import glob
-import os
-import cv2
-from tensorflow.keras.layers import Dense, Dropout, Activation
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, ZeroPadding2D, GlobalAveragePooling2D, Flatten
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.metrics import Precision,Recall
 from tensorflow_addons.metrics import F1Score
-from keras.utils import np_utils
+from  tensorflow.keras.optimizers import Adam
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -19,10 +14,10 @@ dest_path = "breast-cancer-dataset/"
 
 train_datagen = ImageDataGenerator(
         rescale=1./255,
-        zoom_range=0.2,
-        horizontal_flip=True,
-        vertical_flip=True,
-        rotation_range=90,
+        # zoom_range=0.2,
+        # horizontal_flip=True,
+        # vertical_flip=True,
+        # rotation_range=90,
 )
 
 test_datagen = ImageDataGenerator(
@@ -32,38 +27,46 @@ test_datagen = ImageDataGenerator(
 train_generator = train_datagen.flow_from_directory(
         dest_path+'training/',
         target_size=(50, 50),
-        batch_size=32,
+        batch_size=64,
         class_mode='categorical',
+        color_mode='rgb',
         shuffle=True,
 )
 test_generator = test_datagen.flow_from_directory(
         dest_path+'testing',
         target_size=(50, 50),
-        batch_size=32,
-        class_mode='categorical')
+        batch_size=64,
+        class_mode='categorical',
+        color_mode='rgb',
+        shuffle=False)
 
 # ---------  Construct Model ---------
-resnet = ResNet50( weights="imagenet", input_shape=(50, 50, 3), include_top=False, classes=2 )
+# model = Sequential([
+#     ResNet50( weights="imagenet", input_shape=(50, 50, 3), include_top=False),
+#     Flatten(),
+#     Dense(1),
+#     Activation('sigmoid')
+# ])
+
 
 model = Sequential([
-    resnet(trainable=False),
-    Flatten()(resnet.output),
-    Dense(2),
-    Activation('softmax')
+    ResNet50( weights=None, input_shape=(50, 50, 3), include_top=True, classes=2),
 ])
 
 model.summary()
 
 model.compile(
     loss='categorical_crossentropy',
-    optimizer='adam',
+    optimizer=Adam(learning_rate=0.0001),
     metrics=['accuracy', Precision(), Recall(), F1Score(num_classes=2)]
 )
-
+#add momentum,
 history = model.fit(
         train_generator,
-        epochs=14,
-        steps_per_epoch=200
+        epochs=6,
+        steps_per_epoch=200,
+        validation_data= test_generator,
+        validation_steps=100
 )
 
 print('Training Finished..')
@@ -71,32 +74,29 @@ print('Testing ..')
 
 # --------- Test set  ---------
 
-score = model.evaluate(test_generator)
-
-print('===Testing Metrics===')
-print('Test loss: ', score[0])
-print('Test accuracy: ', score[1])
-print('Test precision: ', score[2])
-print('Test recall: ', score[3])
-print('Test F1 Score: ', score[4])
+# score = model.evaluate(test_generator)
+# print('===Testing Metrics===')
+# print('Test loss: ', score[0])
+# print('Test accuracy: ', score[1])
+# print('Test precision: ', score[2])
+# print('Test recall: ', score[3])
+# print('Test F1 Score: ', score[4])
 # ---------  Confusion Matrix ---------
 
-# y_pred = model.predict(X_test)
-# y_pred = np.argmax(y_pred, axis=-1)
-#
-# conf_mat = confusion_matrix(np.argmax(Y_test, axis=-1), y_pred)
-# f,ax=plt.subplots(figsize=(5,5))
-# # Normalize the confusion matrix.
-# conf_mat = np.around(conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis], decimals=2)
-# plt.title("Confusion matrix")
-# sns.heatmap(conf_mat,annot=True,linewidths=0.01,cmap="Greens",linecolor="gray",fmt=".1f",ax=ax)
-# tick_marks = np.arange(len(label_to_id_dict.keys()))
-# plt.xticks(tick_marks, label_to_id_dict.keys(), rotation=45)
-# plt.yticks(tick_marks, label_to_id_dict.keys(), rotation=45)
-# plt.tight_layout()
-# plt.ylabel('True label')
-# plt.xlabel('Predicted label')
-# plt.show()
+probabilities = model.predict_generator(generator=test_generator)
+y_true = test_generator.classes
+y_pred = np.argmax(probabilities, axis=-1)
+
+conf_mat = confusion_matrix(y_true, y_pred)
+f,ax=plt.subplots(figsize=(5,5))
+# Normalize the confusion matrix.
+conf_mat = np.around(conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis], decimals=2)
+plt.title("Confusion matrix")
+sns.heatmap(conf_mat,annot=True,linewidths=0.01,cmap="Greens",linecolor="gray",fmt=".1f",ax=ax)
+plt.tight_layout()
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
+plt.show()
 
 # ---------  Accuracy - Loss Plot ---------
 fit_hist = pd.DataFrame(history.history)
