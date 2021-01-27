@@ -5,5 +5,9 @@
 Student: Samoladas Triantafyllos  
 Course: Pattern Recognition  
 University: Democritus University of Thrace  
-
-<object data="ProjectRequirements.pdf" type="application/pdf" width="100%"></object>  
+ 
+![image info](./ProjectRequirements/1.jpg)  
+![image info](./ProjectRequirements/2.jpg)  
+![image info](./ProjectRequirements/3.jpg)  
+![image info](./ProjectRequirements/4.jpg)  
+![image info](./ProjectRequirements/5.jpg)  
